@@ -35,7 +35,7 @@ ansible-playbook -i development site.yml
 
 # インストールするredmineのバージョン
 
-以下よりインストールするバージョンを指定する事ができます。
+以下よりインストールするバージョンを指定する事ができます。  
 ansible-playbook-redmine/group_vars/common.yml
 
 ## ver2.6をインストールする場合
@@ -54,7 +54,14 @@ common.yml の redmine_svn_branches_url を以下のように設定して下さ�
 redmine_svn_branches_url: http://svn.redmine.org/redmine/branches/3.0-stable
 ```
 
+# redmineのログインID/PASS
+
+ログイン: admin  
+パスワード: admin  
+
+http://redmine.jp/tech_note/first-step/admin/login/
+
 # このplaybookのインストール手順の参考
 
-http://blog.redmine.jp/articles/3_0/installation_centos/
+http://blog.redmine.jp/articles/3_0/installation_centos/  
 公式サイトを参考に、playbook化してみました。
