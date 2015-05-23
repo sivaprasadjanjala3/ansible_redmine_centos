@@ -1,0 +1,108 @@
+- name: stop firewalld
+  service: name=firewalld enabled=false state=stopped
+  sudo: yes
+
+- name: install 'Development tools' package group
+  yum: name="@Development tools" state=present
+  sudo: yes
+
+- name: install redmine dependencies
+  yum: name={{ item }} state=present
+  with_items:
+    - httpd{{ httpd_package_suffix }}
+    - httpd-devel{{ httpd_package_suffix }}
+    - apr-devel
+    - apr-util-devel
+    - openssl-devel
+    - readline-devel
+    - zlib-devel
+    - curl-devel
+    - libyaml-devel
+    - libffi-devel
+    - ImageMagick
+    - ImageMagick-devel
+    - ipa-pgothic-fonts
+  sudo: yes
+
+- name: install bundler
+  gem: name=bundler executable=.rbenv/shims/gem user_install=no
+
+- name: start httpd
+  service: name=httpd enabled=yes state=started
+  sudo: yes
+
+- name: create a new mariadb database
+  mysql_db: name=redmine encoding=utf8 collation=utf8_unicode_ci state=present
+  sudo: yes
+
+- name: create a new mariadb user
+  mysql_user: name=redmine password=redmine priv=redmine.*:ALL,GRANT host=localhost state=present
+  sudo: yes
+
+- name: register redmine is installed
+  stat: path={{ redmine_dir }}
+  register: redmine_checkouted
+
+- name: svn checkout redmine branches
+  subversion: repo={{ redmine_svn_branches_url }} dest={{ redmine_dir }}
+  when: redmine_checkouted.stat.exists == false
+  sudo: yes
+
+- name: chown redmine directory
+  file: path={{ redmine_dir }} recurse=yes owner={{ redmine_dir_owner }} group={{ redmine_dir_group }}
+  sudo: yes
+
+- name: copy conf files
+  copy: src=var/lib/redmine/config/{{ item }} dest={{ redmine_dir }}/config mode=0644 owner={{ redmine_dir_owner }} group={{ redmine_dir_group }}
+  with_items:
+    - database.yml
+    - configuration.yml
+
+- name: install vendor/bundle
+  shell: chdir={{ redmine_dir }} rbenv exec bundle install --without development test --path vendor/bundle
+
+- name: rake generate_secret_token
+  shell: chdir={{ redmine_dir }} bundle exec rake generate_secret_token
+
+- name: rake db:migrate
+  shell: chdir={{ redmine_dir }} RAILS_ENV=production bundle exec rake db:migrate
+
+- name: rake redmine:load_default_data
+  shell: chdir={{ redmine_dir }} RAILS_ENV=production REDMINE_LANG=ja bundle exec rake redmine:load_default_data
+
+- name: install passenger
+  gem: name=passenger executable=.rbenv/shims/gem user_install=no
+
+- name: register passenger install path
+  shell: passenger-config --root
+  register: passenger_install_path
+
+- name: register passenger module path
+  stat: path={{ passenger_install_path.stdout }}/buildout/apache2/mod_passenger.so
+  register: passenger_module
+
+- name: install passenger-install-apache2-module
+  shell: passenger-install-apache2-module --auto
+  when: passenger_module.stat.exists == false
+
+- name: check passenger.conf is created or not
+  shell: passenger-install-apache2-module --snippet > /tmp/passenger.conf
+
+- name: move passenger.conf
+  shell: mv /tmp/passenger.conf /etc/httpd/conf.d/
+  sudo: yes
+
+- name: copy bash fragment
+  copy: src=bash.d/300_redmine.sh dest={{ redmine_dir }}/config mode=0744 owner={{ redmine_dir_owner }} group={{ redmine_dir_group }}
+
+- name: copy httpd confs
+  copy: src=etc/httpd/{{ item.dir }}/{{ item.file }} dest=/etc/httpd/{{ item.dir }} mode=0644 owner=root group=root
+  with_items:
+    - { dir: 'conf.d', file: 'redmine.conf' }
+    - { dir: 'conf.modules.d', file: '00-mpm.conf' }
+  notify: httpd restart
+  sudo: yes
+
+- name: install redmine theme
+  git: repo=git://github.com/makotokw/redmine-theme-gitmike.git dest={{ redmine_dir }}/public/themes/gitmike update=no accept_hostkey=yes
+  sudo: yes

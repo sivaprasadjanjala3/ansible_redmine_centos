@@ -1,0 +1,11 @@
+- name: install mariadb
+  yum: name={{ item }} state=present
+  with_items:
+    - mariadb-server
+    - mariadb-devel
+    - MySQL-python
+  sudo: yes
+
+- name: chkconfig mariadb
+  service: name=mariadb state=started enabled=yes
+  sudo: yes
