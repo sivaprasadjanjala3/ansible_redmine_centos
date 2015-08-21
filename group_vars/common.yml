@@ -3,8 +3,9 @@ user: vagrant
 ruby_version: 2.1.6
 httpd_package_suffix: -2.4.6-31.el7.centos
 
-redmine_svn_branches_url: http://svn.redmine.org/redmine/branches/2.6-stable
+#redmine_svn_branches_url: http://svn.redmine.org/redmine/branches/2.6-stable
 #redmine_svn_branches_url: http://svn.redmine.org/redmine/branches/3.0-stable
+redmine_svn_branches_url: http://svn.redmine.org/redmine/branches/3.1-stable
 redmine_dir: /var/lib/redmine
 redmine_dir_owner: '{{ user }}'
 redmine_dir_group: '{{ user }}'

@@ -1,5 +1,5 @@
 [redmine]
-192.168.33.21
+192.168.33.30
 
 [redmine:vars]
 ansible_ssh_port=22
