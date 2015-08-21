@@ -13,7 +13,7 @@ Vagrant + CentOS7.1 + ansible v1.9.2 で正常動作している事を確認し�
 
 # インベントリ
 
-ansible-playbook-redmine/inventry
+ansible-playbook-redmine/hosts
 
 ```ini
 [redmine]

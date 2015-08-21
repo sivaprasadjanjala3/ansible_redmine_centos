@@ -1,2 +1,2 @@
 #!/bin/sh
-ansible-playbook -i inventry site.yml
+ansible-playbook -i hosts site.yml
